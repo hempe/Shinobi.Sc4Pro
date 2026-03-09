@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Sc4Pro.Analyze/Sc4Pro.Analyze.csproj" />
+  <Project Path="Sc4Pro.StartUp/Sc4Pro.StartUp.csproj" />
+  <Project Path="Sc4Pro/Sc4Pro.csproj" />
+</Solution>
