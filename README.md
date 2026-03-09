@@ -38,7 +38,10 @@ Connects to the device, replays the full sequence from `gatt_clicks.txt`, and sa
 Sc4Pro/
 ├── Bluetooth/
 │   ├── IBleChannel          — transport abstraction (scan, connect, send, notify)
-│   └── LinuxBleChannel      — BlueZ D-Bus implementation
+│   └── BleChannel           — Ble cChannel
+│       └── BleChannel.Linux        — Linux.BlueZ D-Bus implementation
+│       └── BleChannel.Android      — Android.Bluetooth D-Bus implementation
+│       └── BleChannel.Windows      — Windows.Devices.Bluetooth D-Bus implementation
 ├── Logic/
 │   ├── Sc4ProClient         — typed async commands, ack routing, event dispatch
 │   └── Sc4ProDevice         — connects, reads GATT config, runs handshake

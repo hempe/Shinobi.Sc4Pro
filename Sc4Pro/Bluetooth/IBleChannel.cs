@@ -14,4 +14,7 @@ public interface IBleChannel : IAsyncDisposable
 
     /// <summary>Writes a raw packet to the device.</summary>
     Task SendAsync(byte[] packet);
+
+    /// <summary>Reads all readable characteristics and returns a UUID → raw-bytes map.</summary>
+    Task<IReadOnlyDictionary<string, byte[]>> ReadConfigAsync();
 }

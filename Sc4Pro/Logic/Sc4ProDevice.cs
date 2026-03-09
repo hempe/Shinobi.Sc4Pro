@@ -54,7 +54,7 @@ public sealed class Sc4ProDevice : IAsyncDisposable
 
     // ── Internals ─────────────────────────────────────────────────────────────
 
-    private readonly BleChannel _ble = new();
+    private readonly IBleChannel _ble = new BleChannel();
     private Sc4ProClient? _client;
 
     // ── Connect ───────────────────────────────────────────────────────────────
