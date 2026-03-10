@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Shinobi.Sc4Pro.Bluetooth;
 using Shinobi.Sc4Pro.Packets;
 
@@ -8,7 +9,7 @@ namespace Shinobi.Sc4Pro.Logic;
 /// Connects over BLE, reads device config characteristics, performs the
 /// handshake, and exposes the device serial and current settings.
 /// </summary>
-public sealed class Sc4ProDevice : IAsyncDisposable
+public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IAsyncDisposable
 {
     // ── Well-known GATT characteristic UUIDs ─────────────────────────────────
 
@@ -56,11 +57,7 @@ public sealed class Sc4ProDevice : IAsyncDisposable
 
     // ── Internals ─────────────────────────────────────────────────────────────
 
-    private readonly IBleChannel _ble;
     private Sc4ProClient? _client;
-
-    /// <summary>Creates a new device instance using the provided BLE channel.</summary>
-    public Sc4ProDevice(IBleChannel ble) => _ble = ble;
 
     // ── Connect ───────────────────────────────────────────────────────────────
 
@@ -70,13 +67,13 @@ public sealed class Sc4ProDevice : IAsyncDisposable
         _client = new Sc4ProClient(_ble);
         _client.PacketReceived += pkt => PacketReceived?.Invoke(pkt) ?? Task.CompletedTask;
 
-        Console.Write("Scanning for SC4Pro… ");
+        _logger?.LogDebug("Scanning for SC4Pro… ");
         DeviceName = await _client.ConnectAsync();
-        Console.WriteLine($"connected: {DeviceName}");
+        _logger?.LogDebug($"connected: {DeviceName}");
 
         Console.Write("Reading device config… ");
         ParseConfig(await _ble.ReadConfigAsync());
-        Console.WriteLine("done");
+        _logger?.LogDebug("done");
 
         // Handshake: Sync → DS2 → DS1 → EqSetting (matches dump exactly).
         Console.Write("Handshake… ");
@@ -92,7 +89,7 @@ public sealed class Sc4ProDevice : IAsyncDisposable
             mode: 0, club: ClubType.W5);
 
         await _client.SetEqAsync();
-        Console.WriteLine("done");
+        _logger?.LogDebug("done");
     }
 
     private void ParseConfig(IReadOnlyDictionary<string, byte[]> raw)
@@ -131,16 +128,16 @@ public sealed class Sc4ProDevice : IAsyncDisposable
     /// <summary>Prints all device settings and identity fields to stdout.</summary>
     public void LogSettings()
     {
-        Console.WriteLine($"  Device name  : {DeviceName}");
-        Console.WriteLine($"  Manufacturer : {Manufacturer}");
-        Console.WriteLine($"  Model        : {Model}");
-        Console.WriteLine($"  Serial       : {Serial}");
-        Console.WriteLine($"  Firmware     : {FirmwareRevision}");
-        Console.WriteLine($"  Hardware     : {HardwareRevision}");
-        Console.WriteLine($"  Battery      : {(BatteryLevel >= 0 ? $"{BatteryLevel}%" : "(unknown)")}");
-        Console.WriteLine($"  Volume       : {Volume}");
-        Console.WriteLine($"  Mode config  : {ModeConfig}");
-        Console.WriteLine($"  EQ bands     : {EqBands}");
+        _logger?.LogDebug($"  Device name  : {DeviceName}");
+        _logger?.LogDebug($"  Manufacturer : {Manufacturer}");
+        _logger?.LogDebug($"  Model        : {Model}");
+        _logger?.LogDebug($"  Serial       : {Serial}");
+        _logger?.LogDebug($"  Firmware     : {FirmwareRevision}");
+        _logger?.LogDebug($"  Hardware     : {HardwareRevision}");
+        _logger?.LogDebug($"  Battery      : {(BatteryLevel >= 0 ? $"{BatteryLevel}%" : "(unknown)")}");
+        _logger?.LogDebug($"  Volume       : {Volume}");
+        _logger?.LogDebug($"  Mode config  : {ModeConfig}");
+        _logger?.LogDebug($"  EQ bands     : {EqBands}");
     }
 
     // ── Dispose ───────────────────────────────────────────────────────────────

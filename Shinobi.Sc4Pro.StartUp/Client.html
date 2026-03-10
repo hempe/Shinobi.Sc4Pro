@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SC4Pro</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #111; color: #eee; padding: 16px; }
+  h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: .05em; }
+
+  /* Header */
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  #badge {
+    padding: 3px 10px; border-radius: 12px; font-size: .78rem; font-weight: 600;
+    background: #333; color: #aaa;
+  }
+  #badge.scanning { background: #374151; color: #fbbf24; }
+  #badge.connected { background: #14532d; color: #4ade80; }
+  #badge.error { background: #450a0a; color: #f87171; }
+
+  /* Device info */
+  #info { display: none; background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+  #info.visible { display: block; }
+  #info dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; font-size: .85rem; }
+  #info dt { color: #888; }
+  #info dd { color: #ddd; font-family: monospace; }
+
+  /* Controls */
+  #controls { display: none; margin-bottom: 20px; }
+  #controls.visible { display: block; }
+  .section-label { font-size: .75rem; text-transform: uppercase; color: #666; margin-bottom: 8px; letter-spacing: .08em; }
+
+  /* Mode buttons */
+  #mode-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mode-btn {
+    padding: 7px 18px; border: 1px solid #444; border-radius: 6px;
+    background: #222; color: #aaa; cursor: pointer; font-size: .85rem; transition: all .15s;
+  }
+  .mode-btn.active { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+  .mode-btn:hover:not(.active) { background: #2a2a2a; }
+
+  /* Club grid */
+  #club-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 16px; max-width: 420px; }
+  .club-btn {
+    padding: 6px 0; border: 1px solid #333; border-radius: 5px;
+    background: #1c1c1c; color: #ccc; cursor: pointer; font-size: .8rem;
+    text-align: center; transition: all .15s;
+  }
+  .club-btn.active { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; font-weight: 700; }
+  .club-btn:hover:not(.active) { background: #2a2a2a; }
+
+  /* Shot ready */
+  #shot-ready {
+    padding: 9px 28px; border: none; border-radius: 6px;
+    background: #166534; color: #bbf7d0; cursor: pointer; font-size: .9rem; font-weight: 600;
+    transition: background .15s;
+  }
+  #shot-ready:hover { background: #15803d; }
+
+  /* Log */
+  #log-section { }
+  #log {
+    height: 320px; overflow-y: auto; background: #0d0d0d; border: 1px solid #2a2a2a;
+    border-radius: 6px; padding: 10px; font-family: monospace; font-size: .75rem;
+    display: flex; flex-direction: column-reverse; gap: 4px;
+  }
+  .log-entry { color: #6ee7b7; white-space: pre-wrap; word-break: break-all; }
+  .log-entry.ack { color: #93c5fd; }
+  .log-entry.status { color: #fbbf24; }
+  .log-entry.error { color: #f87171; }
+  .log-ts { color: #4b5563; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SC4Pro</h1>
+  <span id="badge">Idle</span>
+</header>
+
+<div id="info">
+  <dl>
+    <dt>Name</dt>     <dd id="d-name">—</dd>
+    <dt>Serial</dt>   <dd id="d-serial">—</dd>
+    <dt>Firmware</dt> <dd id="d-firmware">—</dd>
+    <dt>Hardware</dt> <dd id="d-hardware">—</dd>
+    <dt>Battery</dt>  <dd id="d-battery">—</dd>
+  </dl>
+</div>
+
+<div id="controls">
+  <div class="section-label">Mode</div>
+  <div id="mode-row">
+    <button class="mode-btn active" id="btn-normal" onclick="setMode(false)">Normal</button>
+    <button class="mode-btn" id="btn-swing" onclick="setMode(true)">Swing Speed</button>
+  </div>
+
+  <div class="section-label">Club</div>
+  <div id="club-grid"></div>
+
+  <button id="shot-ready" onclick="shotReady()">Shot Ready</button>
+</div>
+
+<div class="section-label" style="margin-bottom:8px">Event Log</div>
+<div id="log-section">
+  <div id="log"></div>
+</div>
+
+<script>
+const CLUBS = ['W1','W3','W4','W5','W6','W7','U3','U4','U5','U6','U7','I3','I4','I5','I6','I7','I8','I9','PW','GW','SW','LW','PT'];
+
+let ws, activeClub = null, swingSpeedMode = false;
+
+// Build club grid
+const grid = document.getElementById('club-grid');
+CLUBS.forEach(c => {
+  const btn = document.createElement('button');
+  btn.className = 'club-btn';
+  btn.id = 'club-' + c;
+  btn.textContent = c;
+  btn.onclick = () => setClub(c);
+  grid.appendChild(btn);
+});
+
+function connect() {
+  ws = new WebSocket('ws://localhost:8080');
+  ws.onmessage = e => handleMsg(JSON.parse(e.data));
+  ws.onclose = () => { setBadge('idle', 'Disconnected'); setTimeout(connect, 2000); };
+  ws.onerror = () => ws.close();
+}
+
+function handleMsg(msg) {
+  switch (msg.type) {
+    case 'status':
+      if (msg.state === 'scanning') {
+        setBadge('scanning', 'Scanning\u2026');
+      } else if (msg.state === 'connected' && msg.device) {
+        setBadge('connected', 'Connected');
+        document.getElementById('d-name').textContent = msg.device.name || '—';
+        document.getElementById('d-serial').textContent = msg.device.serial || '—';
+        document.getElementById('d-firmware').textContent = msg.device.firmware || '—';
+        document.getElementById('d-hardware').textContent = msg.device.hardware || '—';
+        document.getElementById('d-battery').textContent =
+          msg.device.battery >= 0 ? msg.device.battery + '%' : '—';
+        document.getElementById('info').classList.add('visible');
+        document.getElementById('controls').classList.add('visible');
+      } else if (msg.state === 'error') {
+        setBadge('error', 'Error');
+        logEntry('error', 'Error: ' + (msg.message || 'unknown'));
+      } else if (msg.state === 'idle') {
+        setBadge('idle', 'Idle');
+      }
+      logEntry('status', JSON.stringify(msg, null, 2));
+      break;
+
+    case 'packet':
+      logEntry('packet', JSON.stringify(msg.data, null, 2));
+      break;
+
+    case 'ack':
+      if (msg.command === 'setClub') setActiveClub(msg.club);
+      if (msg.command === 'setMode') setActiveMode(msg.swingSpeed);
+      logEntry('ack', JSON.stringify(msg, null, 2));
+      break;
+  }
+}
+
+function setBadge(cls, text) {
+  const b = document.getElementById('badge');
+  b.className = cls;
+  b.textContent = text;
+}
+
+function logEntry(cls, text) {
+  const log = document.getElementById('log');
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + cls;
+  const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
+  div.innerHTML = '<span class="log-ts">' + ts + '</span>' + escapeHtml(text);
+  log.prepend(div);
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+
+function setClub(club) { send({ type: 'setClub', club }); }
+
+function setMode(isSwing) {
+  send({ type: 'setMode', swingSpeed: isSwing });
+  setActiveMode(isSwing);
+}
+
+function shotReady() { send({ type: 'shotReady' }); }
+
+function setActiveClub(club) {
+  if (activeClub) {
+    const prev = document.getElementById('club-' + activeClub);
+    if (prev) prev.classList.remove('active');
+  }
+  activeClub = club;
+  const btn = document.getElementById('club-' + club);
+  if (btn) btn.classList.add('active');
+}
+
+function setActiveMode(isSwing) {
+  swingSpeedMode = isSwing;
+  document.getElementById('btn-normal').classList.toggle('active', !isSwing);
+  document.getElementById('btn-swing').classList.toggle('active', isSwing);
+}
+
+connect();
+</script>
+</body>
+</html>
