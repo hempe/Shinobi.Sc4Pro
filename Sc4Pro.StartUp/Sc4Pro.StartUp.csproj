@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Sc4Pro/Sc4Pro.csproj" />
+    <ProjectReference Include="../Sc4Pro.Linux/Sc4Pro.Linux.csproj" />
   </ItemGroup>
 </Project>

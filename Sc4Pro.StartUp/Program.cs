@@ -8,11 +8,11 @@ var jsonOptions = new JsonSerializerOptions
     Converters = { new JsonStringEnumConverter() },
 };
 
-await using var device = new Sc4Pro.Logic.Sc4ProDevice();
+await using var device = new Sc4Pro.Logic.Sc4ProDevice(new Sc4Pro.Bluetooth.BleChannel());
 
 device.PacketReceived += pkt =>
 {
-    Console.WriteLine(JsonSerializer.Serialize((object)pkt, jsonOptions));
+    Console.WriteLine(JsonSerializer.Serialize(pkt, jsonOptions));
     return Task.CompletedTask;
 };
 

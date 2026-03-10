@@ -24,7 +24,9 @@ public sealed class Sc4ProDevice : IAsyncDisposable
 
     // ── Public properties (populated by ConnectAsync) ─────────────────────────
 
-    /// <summary>Bluetooth device name (from the BLE advertisement).</summary>
+    /// <summary>
+    /// Bluetooth device name (from the BLE advertisement).
+    /// </summary>
     public string DeviceName { get; private set; } = "";
     /// <summary>Device serial number, populated from the Sync ack (e.g. "SC40B250038-03").</summary>
     public string Serial { get; private set; } = "";
@@ -54,8 +56,11 @@ public sealed class Sc4ProDevice : IAsyncDisposable
 
     // ── Internals ─────────────────────────────────────────────────────────────
 
-    private readonly IBleChannel _ble = new BleChannel();
+    private readonly IBleChannel _ble;
     private Sc4ProClient? _client;
+
+    /// <summary>Creates a new device instance using the provided BLE channel.</summary>
+    public Sc4ProDevice(IBleChannel ble) => _ble = ble;
 
     // ── Connect ───────────────────────────────────────────────────────────────
 

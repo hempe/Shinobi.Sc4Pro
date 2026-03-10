@@ -1,5 +1,8 @@
 <Solution>
-  <Project Path="Sc4Pro.Analyze/Sc4Pro.Analyze.csproj" />
-  <Project Path="Sc4Pro.StartUp/Sc4Pro.StartUp.csproj" />
   <Project Path="Sc4Pro/Sc4Pro.csproj" />
+  <Project Path="Sc4Pro.Linux/Sc4Pro.Linux.csproj" />
+  <Project Path="Sc4Pro.Windows/Sc4Pro.Windows.csproj" />
+  <Project Path="Sc4Pro.Android/Sc4Pro.Android.csproj" />
+  <Project Path="Sc4Pro.StartUp/Sc4Pro.StartUp.csproj" />
+  <Project Path="Sc4Pro.Analyze/Sc4Pro.Analyze.csproj" />
 </Solution>
