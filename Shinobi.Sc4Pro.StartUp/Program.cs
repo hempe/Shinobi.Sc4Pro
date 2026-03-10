@@ -130,6 +130,18 @@ _ = Task.Run(async () =>
             return Task.CompletedTask;
         };
 
+        device.RemoteButtonPressed += remote =>
+        {
+            var club = Shinobi.Sc4Pro.Packets.RemoteControlPacket.ButtonToClub(remote.Button);
+            Broadcast(JsonSerializer.Serialize(new
+            {
+                type = "remoteButton",
+                button = remote.ButtonName,
+                club = club?.ToString(),
+            }, jsonOptions));
+            return Task.CompletedTask;
+        };
+
         await device.ConnectAsync();
 
         currentState = "connected";

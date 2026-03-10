@@ -52,8 +52,15 @@ public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IA
     /// <summary>EQ band values as a comma-separated string (e.g. "008,008,…").</summary>
     public string EqBands { get; private set; } = "";
 
-    /// <summary>Fired for every unsolicited packet (shots, button presses).</summary>
+    /// <summary>Fired for every unsolicited non-remote packet (shots, etc.).</summary>
     public event Func<Sc4ProPacket, Task>? PacketReceived;
+
+    /// <summary>
+    /// Fired for every hardware remote button press.
+    /// Club-category buttons (Driver/Wood/Utility/Iron/Wedge) also automatically
+    /// trigger <see cref="SetClubAsync"/> before this event fires.
+    /// </summary>
+    public event Func<RemoteControlPacket, Task>? RemoteButtonPressed;
 
     // ── Internals ─────────────────────────────────────────────────────────────
 
@@ -65,7 +72,7 @@ public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IA
     public async Task ConnectAsync()
     {
         _client = new Sc4ProClient(_ble);
-        _client.PacketReceived += pkt => PacketReceived?.Invoke(pkt) ?? Task.CompletedTask;
+        _client.PacketReceived += OnPacketReceived;
 
         _logger?.LogDebug("Scanning for SC4Pro… ");
         DeviceName = await _client.ConnectAsync();
@@ -90,6 +97,27 @@ public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IA
 
         await _client.SetEqAsync();
         _logger?.LogDebug("done");
+    }
+
+    private Task OnPacketReceived(Sc4ProPacket pkt)
+    {
+        if (pkt is RemoteControlPacket remote)
+        {
+            var club = RemoteControlPacket.ButtonToClub(remote.Button);
+            if (club.HasValue)
+            {
+                _logger?.LogDebug("Remote club button: {ButtonName} → {Club}", remote.ButtonName, club.Value);
+                // Run on thread pool so we don't deadlock the BLE notification callback
+                _ = Task.Run(async () =>
+                {
+                    try { await SetClubAsync(club.Value); }
+                    catch (Exception ex) { _logger?.LogError(ex, "Auto SetClub failed for {Club}", club.Value); }
+                });
+            }
+            return RemoteButtonPressed?.Invoke(remote) ?? Task.CompletedTask;
+        }
+
+        return PacketReceived?.Invoke(pkt) ?? Task.CompletedTask;
     }
 
     private void ParseConfig(IReadOnlyDictionary<string, byte[]> raw)

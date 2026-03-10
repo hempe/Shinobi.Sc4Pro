@@ -13,6 +13,7 @@ public record RemoteControlPacket(uint Button, string Raw) : Sc4ProPacket(0x78, 
     {
         1 => "Mode",
         2 => "Unit",
+        3 => "Language",
         6 => "LoftAngleUp",
         7 => "LoftAngleDown",
         8 => "TargetDistanceUp",

@@ -69,6 +69,7 @@
   .log-entry.ack { color: #93c5fd; }
   .log-entry.status { color: #fbbf24; }
   .log-entry.error { color: #f87171; }
+  .log-entry.remote { color: #c4b5fd; }
   .log-ts { color: #4b5563; margin-right: 6px; }
 </style>
 </head>
@@ -156,6 +157,11 @@ function handleMsg(msg) {
 
     case 'packet':
       logEntry('packet', JSON.stringify(msg.data, null, 2));
+      break;
+
+    case 'remoteButton':
+      if (msg.club) setActiveClub(msg.club);
+      logEntry('remote', JSON.stringify(msg, null, 2));
       break;
 
     case 'ack':
