@@ -46,11 +46,16 @@ string CurrentStateJson()
             state = "connected",
             device = new
             {
-                name = device.DeviceName,
-                serial = device.Serial,
-                firmware = device.FirmwareRevision,
-                hardware = device.HardwareRevision,
-                battery = device.BatteryLevel,
+                device.DeviceName,
+                device.Serial,
+                device.Manufacturer,
+                device.Model,
+                device.FirmwareRevision,
+                device.HardwareRevision,
+                device.BatteryLevel,
+                device.Volume,
+                device.ModeConfig,
+                device.EqBands
             }
         }, jsonOptions);
 

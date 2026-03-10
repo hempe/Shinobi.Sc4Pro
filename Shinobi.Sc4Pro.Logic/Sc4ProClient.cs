@@ -73,11 +73,49 @@ public sealed class Sc4ProClient : IAsyncDisposable
     /// </remarks>
     public async Task SetModeAsync(bool swingSpeed)
     {
-        await SetDeviceSetting2Async(
-            DS2Flags.AppIndex | DS2Flags.AppIndexOnOff,
-            appIndex: swingSpeed ? (byte)2 : (byte)1, appIndexOnOff: 1);
+#warning tSetModeAsync has to little options see code and commented code below.
+
         if (!swingSpeed)
+        {
+            // This sets it to practice mode
+            await SetDeviceSetting2Async(
+                DS2Flags.AppIndex | DS2Flags.AppIndexOnOff,
+                appIndex: 1,
+                appIndexOnOff: 1);
+
             await SetDeviceSetting1Async(DS1Flags.Mode, mode: 0);
+
+            /*
+            // This sets it to SIM (Simulator mode?)
+            await SetDeviceSetting2Async(
+                DS2Flags.AppIndex | DS2Flags.AppIndexOnOff,
+                appIndex: 2,
+                appIndexOnOff: 1);
+
+            await SetDeviceSetting1Async(DS1Flags.Mode, mode: 0);
+            */
+        }
+        else
+        {
+            // This sets it to swing mode:
+            await SetDeviceSetting2Async(
+            DS2Flags.AppIndex | DS2Flags.AppIndexOnOff,
+                appIndex: 0,
+                appIndexOnOff: 1);
+
+            await SetDeviceSetting1Async(DS1Flags.Mode, mode: 2);
+
+
+            /*
+            // This sets it to target mode.
+            await SetDeviceSetting2Async(
+            DS2Flags.AppIndex | DS2Flags.AppIndexOnOff,
+                appIndex: 0,
+                appIndexOnOff: 1);
+
+            await SetDeviceSetting1Async(DS1Flags.Mode, mode: 1);
+            */
+        }
     }
 
     /// <summary>Sends a DeviceSetting1 command with the given flags and field values, and awaits the ack.</summary>

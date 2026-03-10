@@ -78,7 +78,7 @@ public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IA
         DeviceName = await _client.ConnectAsync();
         _logger?.LogDebug($"connected: {DeviceName}");
 
-        Console.Write("Reading device config… ");
+        _logger?.LogDebug("Reading device config… ");
         ParseConfig(await _ble.ReadConfigAsync());
         _logger?.LogDebug("done");
 
@@ -107,14 +107,28 @@ public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IA
             if (club.HasValue)
             {
                 _logger?.LogDebug("Remote club button: {ButtonName} → {Club}", remote.ButtonName, club.Value);
-                // Run on thread pool so we don't deadlock the BLE notification callback
+                // DS1 only — no ShotReady — so the device stays un-armed and
+                // continues sending loft/target notifications for further adjustment.
                 _ = Task.Run(async () =>
                 {
-                    try { await SetClubAsync(club.Value); }
-                    catch (Exception ex) { _logger?.LogError(ex, "Auto SetClub failed for {Club}", club.Value); }
+                    try { await Client.SetDeviceSetting1Async(DS1Flags.Club, club: club.Value); }
+                    catch (Exception ex) { _logger?.LogError(ex, "Auto SetClub (DS1) failed for {Club}", club.Value); }
                 });
             }
+
+            _logger?.LogDebug("Ingore this button {Raw} → {Club}", pkt.Raw, pkt.Cmd);
+
+#warning we ignore "Unit" button
+#warning we ignore target + / - button
+#warning we ignore loft + / - button
+#warning mode button is ignored.
+#warning current "mode" is not remembered, also loft, unit, target are not rememberd? see other warning for setMode not being good enough.
+
             return RemoteButtonPressed?.Invoke(remote) ?? Task.CompletedTask;
+        }
+        else
+        {
+            _logger?.LogDebug("Unhandled packet {Raw} → {Club}", pkt.Raw, pkt.Cmd);
         }
 
         return PacketReceived?.Invoke(pkt) ?? Task.CompletedTask;
@@ -150,23 +164,6 @@ public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IA
 
     /// <summary>The underlying protocol client for advanced commands.</summary>
     public Sc4ProClient Client => _client ?? throw new InvalidOperationException("Not connected.");
-
-    // ── Logging ───────────────────────────────────────────────────────────────
-
-    /// <summary>Prints all device settings and identity fields to stdout.</summary>
-    public void LogSettings()
-    {
-        _logger?.LogDebug($"  Device name  : {DeviceName}");
-        _logger?.LogDebug($"  Manufacturer : {Manufacturer}");
-        _logger?.LogDebug($"  Model        : {Model}");
-        _logger?.LogDebug($"  Serial       : {Serial}");
-        _logger?.LogDebug($"  Firmware     : {FirmwareRevision}");
-        _logger?.LogDebug($"  Hardware     : {HardwareRevision}");
-        _logger?.LogDebug($"  Battery      : {(BatteryLevel >= 0 ? $"{BatteryLevel}%" : "(unknown)")}");
-        _logger?.LogDebug($"  Volume       : {Volume}");
-        _logger?.LogDebug($"  Mode config  : {ModeConfig}");
-        _logger?.LogDebug($"  EQ bands     : {EqBands}");
-    }
 
     // ── Dispose ───────────────────────────────────────────────────────────────
 
