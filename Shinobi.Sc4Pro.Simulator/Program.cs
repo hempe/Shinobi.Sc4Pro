@@ -67,7 +67,7 @@ var server = WebSocketServerBuilder.Create()
         {
             case "setClub":
                 state.Club = doc.RootElement.GetProperty("club").Deserialize<ClubType>(jsonOptions);
-                Broadcast(JsonSerializer.Serialize(new { type = "ack", command = "setClub", state.Club }, jsonOptions));
+                Broadcast(JsonSerializer.Serialize(new { type = "ack", command = "setClub", state.Club, loftAngle = state.LoftAngle }, jsonOptions));
                 break;
 
             case "setMode":
@@ -93,7 +93,15 @@ var server = WebSocketServerBuilder.Create()
 
             case "remoteButton":
                 var button = doc.RootElement.GetProperty("button").GetUInt32();
-                Broadcast(JsonSerializer.Serialize(new { type = "remoteButton", button }, jsonOptions));
+                state.HandleRemoteButton(button);
+                Broadcast(JsonSerializer.Serialize(new
+                {
+                    type = "remoteButton",
+                    button,
+                    state.Club,
+                    loftAngle = state.LoftAngle,
+                    state.TargetDistance,
+                }, jsonOptions));
                 break;
         }
         await Task.CompletedTask;
@@ -109,16 +117,61 @@ await server.StopAsync();
 
 class SimState
 {
+    private static readonly Dictionary<ClubType, float> _defaultLoft = new()
+    {
+        [ClubType.W1]=10.5f,[ClubType.W3]=15f,[ClubType.W4]=17f,[ClubType.W5]=19f,
+        [ClubType.W6]=21f,[ClubType.W7]=23f,[ClubType.U3]=19f,[ClubType.U4]=22f,
+        [ClubType.U5]=25f,[ClubType.U6]=28f,[ClubType.U7]=31f,[ClubType.I3]=21f,
+        [ClubType.I4]=24f,[ClubType.I5]=27f,[ClubType.I6]=31f,[ClubType.I7]=34f,
+        [ClubType.I8]=38f,[ClubType.I9]=42f,[ClubType.PW]=46f,[ClubType.GW]=50f,
+        [ClubType.SW]=56f,[ClubType.LW]=60f,[ClubType.PT]=3f,
+    };
+
+    private static readonly ClubType[] _woods    = [ClubType.W3, ClubType.W4, ClubType.W5, ClubType.W6, ClubType.W7];
+    private static readonly ClubType[] _utilities = [ClubType.U3, ClubType.U4, ClubType.U5, ClubType.U6, ClubType.U7];
+    private static readonly ClubType[] _irons     = [ClubType.I3, ClubType.I4, ClubType.I5, ClubType.I6, ClubType.I7, ClubType.I8, ClubType.I9];
+    private static readonly ClubType[] _wedges    = [ClubType.PW, ClubType.GW, ClubType.SW, ClubType.LW];
+
     public ClubType Club { get; set; } = ClubType.W5;
     public DeviceMode Mode { get; set; } = DeviceMode.Practice;
     public bool Armed { get; set; }
     public int ShotCount { get; set; }
     public ShotState? Shot { get; set; }
+    public int TargetDistance { get; set; }
+
+    private readonly Dictionary<ClubType, float> _loftOverrides = new();
+
+    public float LoftAngle => _loftOverrides.TryGetValue(Club, out var v) ? v
+        : _defaultLoft.TryGetValue(Club, out var d) ? d : 0f;
+
+    public void HandleRemoteButton(uint button)
+    {
+        switch (button)
+        {
+            case 6: _loftOverrides[Club] = LoftAngle + 0.5f; break;
+            case 7: _loftOverrides[Club] = LoftAngle - 0.5f; break;
+            case 8: TargetDistance++; break;
+            case 9: TargetDistance--; break;
+            case 10: Club = ClubType.W1; break;
+            case 11: Club = Cycle(_woods); break;
+            case 12: Club = Cycle(_utilities); break;
+            case 13: Club = Cycle(_irons); break;
+            case 14: Club = Cycle(_wedges); break;
+            case 22: Club = ClubType.PT; break;
+        }
+    }
+
+    private ClubType Cycle(ClubType[] group)
+    {
+        var idx = Array.IndexOf(group, Club);
+        return idx < 0 ? group[0] : group[(idx + 1) % group.Length];
+    }
 
     public object ToStatusMsg() => new
     {
         type = "status",
         Club,
+        loftAngle = LoftAngle,
         Mode,
         Armed,
         ShotCount,

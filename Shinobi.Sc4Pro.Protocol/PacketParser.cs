@@ -50,9 +50,12 @@ public static class PacketParser
         // 20-byte standard frame = swing-speed ack with timestamp (no shot data)
         if (d.Length == 20)
             return new SwingSpeedAck(
-                Year:  (uint)(d[5] + 2000),
-                Month: d[6], Day:  d[7],
-                Hour:  d[8], Min:  d[9], Sec: d[10],
+                Year: (uint)(d[5] + 2000),
+                Month: d[6],
+                Day: d[7],
+                Hour: d[8],
+                Min: d[9],
+                Sec: d[10],
                 raw);
 
         uint index = BitConverter.ToUInt32(d, 2);
@@ -62,33 +65,46 @@ public static class PacketParser
         ShotData data = seq switch
         {
             1 when p.Length >= 40 => new ShotMetadata(
-                BitConverter.ToUInt32(p, 0), BitConverter.ToUInt32(p, 4),
-                BitConverter.ToUInt32(p, 8), BitConverter.ToUInt32(p, 12),
-                BitConverter.ToUInt32(p, 16), BitConverter.ToUInt32(p, 20),
+                BitConverter.ToUInt32(p, 0),
+                BitConverter.ToUInt32(p, 4),
+                BitConverter.ToUInt32(p, 8),
+                BitConverter.ToUInt32(p, 12),
+                BitConverter.ToUInt32(p, 16),
+                BitConverter.ToUInt32(p, 20),
                 BitConverter.ToUInt32(p, 24),
                 (ClubType)BitConverter.ToUInt32(p, 28),
                 BitConverter.ToSingle(p, 32),
-                BitConverter.ToUInt32(p, 36) == 0) { Tail = p[40..] },
+                BitConverter.ToUInt32(p, 36) == 0)
+            { Tail = p[40..] },
             2 when p.Length >= 12 => new ShotBallSpeed(
                 BitConverter.ToSingle(p, 0),
                 BitConverter.ToSingle(p, 4),
-                BitConverter.ToSingle(p, 8)) { Tail = p[12..] },
+                BitConverter.ToSingle(p, 8))
+            { Tail = p[12..] },
             3 when p.Length >= 12 => new ShotClubCarry(
                 BitConverter.ToSingle(p, 0),
                 BitConverter.ToSingle(p, 4),
-                BitConverter.ToSingle(p, 8)) { Tail = p[12..] },
+                BitConverter.ToSingle(p, 8))
+            { Tail = p[12..] },
             4 when p.Length >= 12 => new ShotDistanceApex(
                 BitConverter.ToSingle(p, 0),
                 BitConverter.ToSingle(p, 4),
-                BitConverter.ToSingle(p, 8)) { Tail = p[12..] },
+                BitConverter.ToSingle(p, 8))
+            { Tail = p[12..] },
             5 when p.Length >= 20 => new ShotDirection(
-                BitConverter.ToSingle(p, 0), BitConverter.ToSingle(p, 4),
-                BitConverter.ToInt32(p, 8), BitConverter.ToInt32(p, 12),
-                BitConverter.ToUInt32(p, 16)) { Tail = p[20..] },
+                BitConverter.ToSingle(p, 0),
+                BitConverter.ToSingle(p, 4),
+                BitConverter.ToInt32(p, 8),
+                BitConverter.ToInt32(p, 12),
+                BitConverter.ToUInt32(p, 16))
+            { Tail = p[20..] },
             6 when p.Length >= 12 => new ShotSpinDetails(
-                BitConverter.ToUInt32(p, 0), BitConverter.ToInt16(p, 4),
-                BitConverter.ToInt16(p, 6), BitConverter.ToInt16(p, 8),
-                BitConverter.ToInt16(p, 10)) { Tail = p[12..] },
+                BitConverter.ToUInt32(p, 0),
+                BitConverter.ToInt16(p, 4),
+                BitConverter.ToInt16(p, 6),
+                BitConverter.ToInt16(p, 8),
+                BitConverter.ToInt16(p, 10))
+            { Tail = p[12..] },
             _ => new UnknownShotData(seq, p),
         };
 

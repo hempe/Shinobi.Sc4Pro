@@ -1,11 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.cdnfonts.com/css/seven-segment" rel="stylesheet">
   <title>SC4Pro Simulator</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --grid-line: 2px;
+    }
 
     body {
       background: #111;
@@ -18,127 +28,141 @@
       padding: 16px;
     }
 
-    /* ── Device screen ───────────────────────────────────────── */
+    .simulator {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+    }
+
     .screen {
       background: #1a1a14;
       border: 3px solid #333;
       border-radius: 8px;
       padding: 10px 12px;
-      width: 480px;
-      color: #e8c84a;
+      color: #333;
       user-select: none;
+      width: 360px;
+      height: fit-content;
     }
 
-    /* Top status bar */
+    /* ── Top bar: Mode | Club/Angle | Counter + EQ + BT ── */
+    .top-mode {
+      font-family: 'Seven Segment', monospace;
+    }
+
     .top-bar {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      font-size: 0.78rem;
-      color: #c8a830;
       margin-bottom: 6px;
-      padding-bottom: 4px;
-      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
+      font-size: 0.8rem;
     }
 
-    .top-bar .mode-label { font-weight: 700; font-size: 0.9rem; }
+    .top-mode {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #ddd;
+    }
 
-    .top-bar .icons { display: flex; gap: 6px; align-items: center; font-size: 0.75rem; color: #888; }
-    .top-bar .counter { font-family: monospace; color: #c8a830; }
+    .top-club {
+      font-family: 'Seven Segment', monospace;
+      font-size: 0.85rem;
+      color: #ddd;
+      text-align: center;
+    }
 
-    /* Large carry display */
-    .main-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
+    .top-right {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
+      color: #888;
+      font-size: 0.78rem;
     }
 
-    .carry-block {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
+    .top-right .counter {
+      font-family: 'Seven Segment', monospace;
+      color: #ddd;
+      font-size: 0.85rem;
     }
 
-    .lcd-big {
-      font-family: 'Courier New', monospace;
-      font-size: 3.8rem;
-      font-weight: 700;
-      color: #f0d050;
-      letter-spacing: 0.05em;
-      line-height: 1;
+    .bt-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #444;
+      display: inline-block;
     }
 
-    .lcd-unit {
-      font-family: 'Courier New', monospace;
-      font-size: 1.1rem;
-      color: #b09030;
-      align-self: flex-end;
-      margin-bottom: 4px;
+    .bt-dot.on {
+      background: #3b82f6;
     }
 
-    .right-block {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      justify-content: space-between;
-      min-width: 130px;
-    }
-
-    .field-label {
-      font-size: 0.65rem;
+    /* ── Shared label/value styles ── */
+    .lbl {
+      position: absolute;
+      top: 4px;
+      right: 8px;
+      font-size: 0.5rem;
       color: #8a7020;
-      text-transform: uppercase;
       letter-spacing: 0.06em;
-      text-align: right;
     }
 
-    .lcd-mid {
-      font-family: 'Courier New', monospace;
-      font-size: 1.9rem;
+    .val {
+      font-family: 'Seven Segment', monospace;
       font-weight: 700;
-      color: #f0d050;
-      text-align: right;
+      color: #ddd;
       line-height: 1;
     }
 
-    /* Stats grid: 3 columns */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 6px 8px;
-      border-top: 1px solid #333;
-      padding-top: 6px;
+    .unit {
+      font-family: 'Seven Segment', monospace;
+      color: #ddd;
+    }
+
+    .carry {
+      align-items: end;
+      display: flex;
+    }
+
+    .carry-val {
+      font-size: 3.4rem;
+    }
+
+    .carry-unit {
+      font-size: 1.1rem;
+    }
+
+    .dir-val {
+      font-size: 1.8rem;
     }
 
     .stat {
+      position: relative;
+      padding-inline: 6px;
+    }
+
+
+    .stat {
+      padding-top: 10px;
+      padding-bottom: 2px;
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: var(--grid-line);
+      align-items: center;
+      justify-content: center;
     }
 
-    .stat .lcd-val {
-      font-family: 'Courier New', monospace;
-      font-size: 1.45rem;
-      font-weight: 700;
-      color: #f0d050;
-      line-height: 1;
+    .stat-val {
+      font-size: 2.0rem;
     }
 
-    .stat .stat-unit {
-      font-family: 'Courier New', monospace;
+    .stat-unit {
       font-size: 0.72rem;
-      color: #b09030;
     }
 
-    .stat .stat-label {
-      font-size: 0.6rem;
-      color: #8a7020;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    /* ── Connection badge ────────────────────────────────────── */
+    /* ── Connection badge ── */
     #badge {
       margin-top: 12px;
       padding: 3px 12px;
@@ -148,94 +172,242 @@
       background: #333;
       color: #aaa;
     }
-    #badge.ok { background: #14532d; color: #4ade80; }
-    #badge.err { background: #450a0a; color: #f87171; }
+
+    #badge.ok {
+      background: #14532d;
+      color: #4ade80;
+    }
+
+    #badge.err {
+      background: #450a0a;
+      color: #f87171;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr var(--grid-line) 1fr var(--grid-line) 1fr;
+      grid-template-rows: auto var(--grid-line) auto var(--grid-line) auto;
+      gap: 0;
+      --width: 300px;
+      --height: 200px;
+    }
+
+    .l {
+      background-color: #777;
+    }
+
+    .hls {
+      margin-right: calc(var(--grid-line) * 2);
+    }
+
+    .hlc {
+      margin-inline: calc(var(--grid-line) * 2);
+    }
+
+    .hle {
+      margin-left: calc(var(--grid-line) * 2);
+    }
+
+    .vl {
+      margin-block: calc(var(--grid-line) * 2);
+    }
+
+
+
+    .remote {
+      background: #1a1a14;
+      border: 3px solid #333;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #333;
+
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: 60px 120px 60px 60px;
+      gap: 0px;
+      padding: 10px;
+      position: relative;
+      font-size: 8px;
+    }
+
+    .button {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #eee;
+      border-radius: 4px;
+      background: transparent;
+      user-select: none;
+      text-align: center;
+    }
+
+    .plus-minus-button {
+      display: flex;
+      color: #eee;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 1px solid #eee;
+      border-right: 1px solid #eee;
+      padding: 5px 0;
+    }
+
+    .plus-minus-button .pm {
+      font-weight: bold;
+      color: #eee;
+    }
   </style>
 </head>
+
 <body>
 
-  <div class="screen">
+  <div class="simulator">
+    <div class="screen">
 
-    <!-- Top bar -->
-    <div class="top-bar">
-      <span class="mode-label" id="mode-label">Practice</span>
-      <div class="icons">
-        <span>⚡</span>
-        <span id="bt-icon">⬡</span>
-        <span class="counter" id="shot-counter">000</span>
-      </div>
-    </div>
-
-    <!-- Main carry + launch direction -->
-    <div class="main-row">
-      <div class="carry-block">
-        <span class="lcd-big" id="carry">---.-</span>
-        <span class="lcd-unit" id="unit">y</span>
-      </div>
-      <div class="right-block">
-        <span class="field-label">Carry Total</span>
-        <div>
-          <div class="field-label">Launch Direction</div>
-          <div class="lcd-mid" id="launch-dir">--.-°</div>
+      <!-- Top bar: Mode | Club / Angle° | Shots + EQ + BT -->
+      <div class="top-bar">
+        <span class="top-mode" id="mode-label">Practice</span>
+        <span class="top-club"><span id="club-label">W5</span> / <span id="angle-label">19.0</span>°</span>
+        <div class="top-right">
+          <span class="counter" id="shot-counter">000</span>
+          <span id="eq-icon" title="Equalizer">≋</span>
+          <span class="bt-dot" id="bt-dot" title="Bluetooth"></span>
         </div>
       </div>
-    </div>
 
-    <!-- 6-stat grid -->
-    <div class="stats-grid">
-      <div class="stat">
-        <div class="lcd-val" id="swing">--.-</div>
-        <div class="stat-unit">mph</div>
-        <div class="stat-label">Swing</div>
+      <div class="grid">
+        <div class="stat carry" style="grid-column: span 3">
+          <div class="lbl">Carry</div>
+          <div style="display:flex;align-items:baseline;gap:6px">
+            <span class="val carry-val" id="carry">---.-</span>
+            <span class="unit carry-unit" id="dist-unit">y</span>
+          </div>
+        </div>
+        <div class="l vl"></div>
+        <div class="stat">
+          <div class="lbl">Launch Direction</div>
+          <span class="val dir-val" id="launch-dir">--.-°</span>
+        </div>
+
+
+        <div class="l hls"></div>
+        <div></div>
+        <div class="l hlc"></div>
+        <div></div>
+        <div class="l hle"></div>
+
+        <div class="stat">
+          <div class="lbl">Swing</div>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span class="val stat-val" id="swing">--.-</span>
+            <span class="unit stat-unit" id="speed-unit">mph</span>
+          </div>
+        </div>
+        <div class="l vl"></div>
+        <div class="stat">
+          <div class="lbl">Ball</div>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span class="val stat-val" id="ball">---.-</span>
+            <span class="unit stat-unit">mph</span>
+          </div>
+        </div>
+        <div class="l vl"></div>
+        <div class="stat">
+          <div class="lbl">Smash Factor</div>
+          <span class="val stat-val" id="smash">-.--</span>
+        </div>
+
+        <div class="l hls"></div>
+        <div></div>
+        <div class="l hlc"></div>
+        <div></div>
+        <div class="l hle"></div>
+
+        <div class="stat">
+          <div class="lbl">Launch Angle</div>
+          <div style="display:flex;gap:4px">
+            <span class="val stat-val" id="launch-angle">--.-</span>
+            <span class="unit">°</span>
+          </div>
+        </div>
+        <div class="l vl"></div>
+        <div class="stat">
+          <div class="lbl">Apex</div>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span class="val stat-val" id="apex">--.-</span>
+            <span class="unit stat-unit" id="height-unit">ft</span>
+          </div>
+        </div>
+        <div class="l vl"></div>
+        <div class="stat">
+          <div class="lbl">Spin</div>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span class="val stat-val" id="spin">----</span>
+            <span class="unit stat-unit">rpm</span>
+          </div>
+        </div>
+
       </div>
-      <div class="stat">
-        <div class="lcd-val" id="ball">---.-</div>
-        <div class="stat-unit">mph</div>
-        <div class="stat-label">Ball</div>
+
+    </div>
+    <div class="remote">
+      <!-- Top row -->
+      <div class="button" onclick="btn(0)">MODE</div>
+      <div class="button" onclick="btn(0)">UNIT</div>
+      <div class="button" onclick="btn(0)">LANG</div>
+
+      <!-- ± middle row -->
+      <div class="plus-minus-button">
+        <span class="pm" onclick="btn(0)">+</span>
+        <span>VOL</span>
+        <span class="pm" onclick="btn(0)">-</span>
       </div>
-      <div class="stat">
-        <div class="lcd-val" id="smash">-.--</div>
-        <div class="stat-unit">%</div>
-        <div class="stat-label">Smash Factor</div>
+      <div class="plus-minus-button">
+        <span class="pm" onclick="btn(6)">+</span>
+        <span>LOFT</span>
+        <span class="pm" onclick="btn(7)">-</span>
       </div>
-      <div class="stat">
-        <div class="lcd-val" id="launch-angle">--.-</div>
-        <div class="stat-unit">°</div>
-        <div class="stat-label">Launch Angle</div>
+      <div class="plus-minus-button">
+        <span class="pm" onclick="btn(8)">+</span>
+        <span>TARGET</span>
+        <span class="pm" onclick="btn(9)">-</span>
       </div>
-      <div class="stat">
-        <div class="lcd-val" id="apex">--.-</div>
-        <div class="stat-unit" id="apex-unit">ft</div>
-        <div class="stat-label">Apex</div>
-      </div>
-      <div class="stat">
-        <div class="lcd-val" id="spin">----</div>
-        <div class="stat-unit">rpm</div>
-        <div class="stat-label">Spin</div>
-      </div>
+
+      <!-- Third row -->
+      <div class="button" onclick="btn(10)">DRIVER</div>
+      <div class="button" onclick="btn(11)">FAIRWAY WOOD</div>
+      <div class="button" onclick="btn(12)">UTILITY</div>
+
+      <!-- Fourth row -->
+      <div class="button" onclick="btn(13)">IRON</div>
+      <div class="button" onclick="btn(14)">WEDGE</div>
+      <div class="button" onclick="btn(0)">TOTAL/CARRY</div>
     </div>
 
   </div>
-
   <span id="badge">Connecting…</span>
 
   <script>
-    let ws, shotCount = 0;
+    let ws;
 
     function connect() {
       ws = new WebSocket('ws://localhost:8081');
+      ws.onopen = () => setBt(true);
+      ws.onclose = () => { setBt(false); setTimeout(connect, 2000); };
       ws.onmessage = e => handle(JSON.parse(e.data));
-      ws.onopen = () => { document.getElementById('badge').textContent = 'Connected'; document.getElementById('badge').className = 'ok'; };
-      ws.onclose = () => { document.getElementById('badge').textContent = 'Disconnected'; document.getElementById('badge').className = 'err'; setTimeout(connect, 2000); };
     }
 
     function handle(msg) {
       if (msg.type === 'status') {
         setMode(msg.mode);
+        setClub(msg.club, msg.loftAngle);
         setCounter(msg.shotCount ?? 0);
         if (msg.shot) updateShot(msg.shot);
       } else if (msg.type === 'ack') {
         if (msg.command === 'setMode') setMode(msg.mode);
+        if (msg.command === 'setClub') setClub(msg.club, msg.loftAngle);
+      } else if (msg.type === 'remoteButton') {
+        setClub(msg.club, msg.loftAngle);
       } else if (msg.type === 'shot') {
         setCounter(msg.shotCount);
         updateShot(msg.shot);
@@ -245,21 +417,33 @@
     const MODE_LABELS = { Practice: 'Practice', SwingSpeed: 'SW', Sim: 'SIM' };
 
     function setMode(mode) {
-      document.getElementById('mode-label').textContent = MODE_LABELS[mode] ?? mode;
+      document.getElementById('mode-label').textContent = MODE_LABELS[mode] ?? mode ?? 'Practice';
+    }
+
+    function setClub(club, angle) {
+      if (club) document.getElementById('club-label').textContent = club;
+      if (angle != null) document.getElementById('angle-label').textContent = angle.toFixed(1);
     }
 
     function setCounter(n) {
-      shotCount = n;
       document.getElementById('shot-counter').textContent = String(n).padStart(3, '0');
     }
+
+    function setBt(on) {
+      document.getElementById('bt-dot').className = 'bt-dot' + (on ? ' on' : '');
+      document.getElementById('badge').textContent = on ? 'Connected' : 'Disconnected';
+      document.getElementById('badge').className = on ? 'ok' : 'err';
+    }
+
+    function btn(n) { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'remoteButton', button: n })); }
 
     function fmt1(v) { return v == null ? '--.-' : v.toFixed(1); }
     function fmt0(v) { return v == null ? '----' : Math.round(v).toString(); }
 
     function updateShot(s) {
-      const isMetric = s.unit === 'm';
-      document.getElementById('unit').textContent = s.unit ?? 'y';
-      document.getElementById('apex-unit').textContent = isMetric ? 'm' : 'ft';
+      const metric = s.unit === 'm';
+      document.getElementById('dist-unit').textContent = s.unit ?? 'y';
+      document.getElementById('height-unit').textContent = metric ? 'm' : 'ft';
       document.getElementById('carry').textContent = fmt1(s.carry);
       document.getElementById('launch-dir').textContent = (s.launchDirection >= 0 ? '+' : '') + fmt1(s.launchDirection) + '°';
       document.getElementById('swing').textContent = fmt1(s.clubSpeed);
@@ -273,4 +457,5 @@
     connect();
   </script>
 </body>
+
 </html>

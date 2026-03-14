@@ -12,6 +12,13 @@ namespace Shinobi.Sc4Pro.Packets;
 /// <param name="LoftAngle">Loft angle in degrees.</param>
 /// <param name="IsMetric">True when the device is configured for metric units.</param>
 public record ShotMetadata(
-    uint Year, uint Month, uint Day, uint Hour, uint Min, uint Sec,
+    uint Year,
+    uint Month,
+    uint Day,
+    uint Hour,
+    uint Min,
+    uint Sec,
     uint Unknown1,
-    ClubType Club, float LoftAngle, bool IsMetric) : ShotData;
+    ClubType Club,
+    float LoftAngle,
+     bool IsMetric) : ShotData;
