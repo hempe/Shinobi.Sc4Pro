@@ -7,6 +7,14 @@ namespace Shinobi.Sc4Pro.Protocol;
 /// </summary>
 public static class AckBuilder
 {
+    /// <summary>Remote-control button packet (cmd 0x78): button number as uint32 LE in content[0..3].</summary>
+    public static byte[] RemoteButton(uint button)
+    {
+        var content = new byte[16];
+        BitConverter.GetBytes(button).CopyTo(content, 0);
+        return Build(0x78, content);
+    }
+
     /// <summary>Generic ack: cmd echoed back, content[0]=0x01, rest zeros.</summary>
     public static byte[] Ack(byte cmd)
     {

@@ -97,12 +97,12 @@ async Task HandleUiAsync(ShinobiWebSocket ws, string msg, CancellationToken ct)
     {
         case "setClub":
             state.Club = doc.RootElement.GetProperty("club").Deserialize<ClubType>(jsonOptions);
-            Broadcast(JsonSerializer.Serialize(new { type = "ack", command = "setClub", state.Club, loftAngle = state.LoftAngle }, jsonOptions));
+            Broadcast(JsonSerializer.Serialize(new { type = "ack", command = "setClub", club = state.Club, loftAngle = state.LoftAngle }, jsonOptions));
             break;
 
         case "setMode":
             state.Mode = doc.RootElement.GetProperty("mode").Deserialize<DeviceMode>(jsonOptions);
-            Broadcast(JsonSerializer.Serialize(new { type = "ack", command = "setMode", state.Mode }, jsonOptions));
+            Broadcast(JsonSerializer.Serialize(new { type = "ack", command = "setMode", mode = state.Mode }, jsonOptions));
             break;
 
         case "shotReady":
@@ -128,10 +128,17 @@ async Task HandleUiAsync(ShinobiWebSocket ws, string msg, CancellationToken ct)
             {
                 type = "remoteButton",
                 button,
-                state.Club,
+                club = state.Club,
                 loftAngle = state.LoftAngle,
-                state.TargetDistance,
+                targetDistance = state.TargetDistance,
             }, jsonOptions));
+            // Forward as a RemoteControlPacket to the BLE client (StartUp)
+            if (bleWs != null)
+            {
+                var pkt = AckBuilder.RemoteButton(button);
+                var rx = JsonSerializer.Serialize(new { type = "rx", data = Convert.ToBase64String(pkt) });
+                _ = bleWs.SendTextAsync(rx, CancellationToken.None);
+            }
             break;
     }
     await Task.CompletedTask;
@@ -247,12 +254,12 @@ class SimState
     public object ToStatusMsg() => new
     {
         type = "status",
-        Club,
+        club = Club,
         loftAngle = LoftAngle,
-        Mode,
-        Armed,
-        ShotCount,
-        Shot,
+        mode = Mode,
+        armed = Armed,
+        shotCount = ShotCount,
+        shot = Shot,
     };
 }
 
