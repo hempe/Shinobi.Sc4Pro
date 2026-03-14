@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SC4Pro Simulator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, sans-serif;
+      padding: 16px;
+    }
+
+    /* ── Device screen ───────────────────────────────────────── */
+    .screen {
+      background: #1a1a14;
+      border: 3px solid #333;
+      border-radius: 8px;
+      padding: 10px 12px;
+      width: 480px;
+      color: #e8c84a;
+      user-select: none;
+    }
+
+    /* Top status bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: #c8a830;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #333;
+    }
+
+    .top-bar .mode-label { font-weight: 700; font-size: 0.9rem; }
+
+    .top-bar .icons { display: flex; gap: 6px; align-items: center; font-size: 0.75rem; color: #888; }
+    .top-bar .counter { font-family: monospace; color: #c8a830; }
+
+    /* Large carry display */
+    .main-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .carry-block {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .lcd-big {
+      font-family: 'Courier New', monospace;
+      font-size: 3.8rem;
+      font-weight: 700;
+      color: #f0d050;
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+
+    .lcd-unit {
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem;
+      color: #b09030;
+      align-self: flex-end;
+      margin-bottom: 4px;
+    }
+
+    .right-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      min-width: 130px;
+    }
+
+    .field-label {
+      font-size: 0.65rem;
+      color: #8a7020;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      text-align: right;
+    }
+
+    .lcd-mid {
+      font-family: 'Courier New', monospace;
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #f0d050;
+      text-align: right;
+      line-height: 1;
+    }
+
+    /* Stats grid: 3 columns */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px 8px;
+      border-top: 1px solid #333;
+      padding-top: 6px;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .stat .lcd-val {
+      font-family: 'Courier New', monospace;
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #f0d050;
+      line-height: 1;
+    }
+
+    .stat .stat-unit {
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      color: #b09030;
+    }
+
+    .stat .stat-label {
+      font-size: 0.6rem;
+      color: #8a7020;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Connection badge ────────────────────────────────────── */
+    #badge {
+      margin-top: 12px;
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #333;
+      color: #aaa;
+    }
+    #badge.ok { background: #14532d; color: #4ade80; }
+    #badge.err { background: #450a0a; color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <div class="screen">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <span class="mode-label" id="mode-label">Practice</span>
+      <div class="icons">
+        <span>⚡</span>
+        <span id="bt-icon">⬡</span>
+        <span class="counter" id="shot-counter">000</span>
+      </div>
+    </div>
+
+    <!-- Main carry + launch direction -->
+    <div class="main-row">
+      <div class="carry-block">
+        <span class="lcd-big" id="carry">---.-</span>
+        <span class="lcd-unit" id="unit">y</span>
+      </div>
+      <div class="right-block">
+        <span class="field-label">Carry Total</span>
+        <div>
+          <div class="field-label">Launch Direction</div>
+          <div class="lcd-mid" id="launch-dir">--.-°</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6-stat grid -->
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="lcd-val" id="swing">--.-</div>
+        <div class="stat-unit">mph</div>
+        <div class="stat-label">Swing</div>
+      </div>
+      <div class="stat">
+        <div class="lcd-val" id="ball">---.-</div>
+        <div class="stat-unit">mph</div>
+        <div class="stat-label">Ball</div>
+      </div>
+      <div class="stat">
+        <div class="lcd-val" id="smash">-.--</div>
+        <div class="stat-unit">%</div>
+        <div class="stat-label">Smash Factor</div>
+      </div>
+      <div class="stat">
+        <div class="lcd-val" id="launch-angle">--.-</div>
+        <div class="stat-unit">°</div>
+        <div class="stat-label">Launch Angle</div>
+      </div>
+      <div class="stat">
+        <div class="lcd-val" id="apex">--.-</div>
+        <div class="stat-unit" id="apex-unit">ft</div>
+        <div class="stat-label">Apex</div>
+      </div>
+      <div class="stat">
+        <div class="lcd-val" id="spin">----</div>
+        <div class="stat-unit">rpm</div>
+        <div class="stat-label">Spin</div>
+      </div>
+    </div>
+
+  </div>
+
+  <span id="badge">Connecting…</span>
+
+  <script>
+    let ws, shotCount = 0;
+
+    function connect() {
+      ws = new WebSocket('ws://localhost:8081');
+      ws.onmessage = e => handle(JSON.parse(e.data));
+      ws.onopen = () => { document.getElementById('badge').textContent = 'Connected'; document.getElementById('badge').className = 'ok'; };
+      ws.onclose = () => { document.getElementById('badge').textContent = 'Disconnected'; document.getElementById('badge').className = 'err'; setTimeout(connect, 2000); };
+    }
+
+    function handle(msg) {
+      if (msg.type === 'status') {
+        setMode(msg.mode);
+        setCounter(msg.shotCount ?? 0);
+        if (msg.shot) updateShot(msg.shot);
+      } else if (msg.type === 'ack') {
+        if (msg.command === 'setMode') setMode(msg.mode);
+      } else if (msg.type === 'shot') {
+        setCounter(msg.shotCount);
+        updateShot(msg.shot);
+      }
+    }
+
+    const MODE_LABELS = { Practice: 'Practice', SwingSpeed: 'SW', Sim: 'SIM' };
+
+    function setMode(mode) {
+      document.getElementById('mode-label').textContent = MODE_LABELS[mode] ?? mode;
+    }
+
+    function setCounter(n) {
+      shotCount = n;
+      document.getElementById('shot-counter').textContent = String(n).padStart(3, '0');
+    }
+
+    function fmt1(v) { return v == null ? '--.-' : v.toFixed(1); }
+    function fmt0(v) { return v == null ? '----' : Math.round(v).toString(); }
+
+    function updateShot(s) {
+      const isMetric = s.unit === 'm';
+      document.getElementById('unit').textContent = s.unit ?? 'y';
+      document.getElementById('apex-unit').textContent = isMetric ? 'm' : 'ft';
+      document.getElementById('carry').textContent = fmt1(s.carry);
+      document.getElementById('launch-dir').textContent = (s.launchDirection >= 0 ? '+' : '') + fmt1(s.launchDirection) + '°';
+      document.getElementById('swing').textContent = fmt1(s.clubSpeed);
+      document.getElementById('ball').textContent = fmt1(s.ballSpeed);
+      document.getElementById('smash').textContent = fmt1(s.smashFactor);
+      document.getElementById('launch-angle').textContent = fmt1(s.launchAngle);
+      document.getElementById('apex').textContent = fmt1(s.apex);
+      document.getElementById('spin').textContent = fmt0(s.totalSpin);
+    }
+
+    connect();
+  </script>
+</body>
+</html>

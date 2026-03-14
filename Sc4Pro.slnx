@@ -8,4 +8,5 @@
   <Project Path="Shinobi.Sc4Pro.Android/Shinobi.Sc4Pro.Android.csproj" />
   <Project Path="Shinobi.Sc4Pro.StartUp/Shinobi.Sc4Pro.StartUp.csproj" />
   <Project Path="Shinobi.Sc4Pro.Analyze/Shinobi.Sc4Pro.Analyze.csproj" />
+  <Project Path="Shinobi.Sc4Pro.Simulator/Shinobi.Sc4Pro.Simulator.csproj" />
 </Solution>

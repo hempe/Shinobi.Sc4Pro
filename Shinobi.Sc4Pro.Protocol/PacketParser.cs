@@ -47,6 +47,14 @@ public static class PacketParser
     {
         if (d.Length < 18) return new UnknownPacket(0x73, raw);
 
+        // 20-byte standard frame = swing-speed ack with timestamp (no shot data)
+        if (d.Length == 20)
+            return new SwingSpeedAck(
+                Year:  (uint)(d[5] + 2000),
+                Month: d[6], Day:  d[7],
+                Hour:  d[8], Min:  d[9], Sec: d[10],
+                raw);
+
         uint index = BitConverter.ToUInt32(d, 2);
         uint seq = BitConverter.ToUInt32(d, 6);
         byte[] p = d[10..^2]; // payload between seq and [0x45][cs]

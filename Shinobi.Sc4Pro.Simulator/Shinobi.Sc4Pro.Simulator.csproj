@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Shinobi.Sc4Pro.Packets/Shinobi.Sc4Pro.Packets.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Shinobi.WebSockets" Version="1.0.25" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.7" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Simulator.html" />
+  </ItemGroup>
+</Project>
