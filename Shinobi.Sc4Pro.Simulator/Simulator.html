@@ -239,6 +239,9 @@
       background: transparent;
       user-select: none;
       text-align: center;
+      padding-inline: 8px;
+      user-select: none;
+      cursor: pointer;
     }
 
     .plus-minus-button {
@@ -255,6 +258,15 @@
     .plus-minus-button .pm {
       font-weight: bold;
       color: #eee;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .button.unknown,
+    .plus-minus-button.unknown {
+      opacity: 0.25;
+      cursor: not-allowed;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -352,15 +364,15 @@
     </div>
     <div class="remote">
       <!-- Top row -->
-      <div class="button" onclick="btn(0)">MODE</div>
-      <div class="button" onclick="btn(0)">UNIT</div>
-      <div class="button" onclick="btn(0)">LANG</div>
+      <div class="button unknown">MODE</div>
+      <div class="button unknown">UNIT</div>
+      <div class="button unknown">LANG</div>
 
       <!-- ± middle row -->
-      <div class="plus-minus-button">
-        <span class="pm" onclick="btn(0)">+</span>
+      <div class="plus-minus-button unknown">
+        <span class="pm">+</span>
         <span>VOL</span>
-        <span class="pm" onclick="btn(0)">-</span>
+        <span class="pm">-</span>
       </div>
       <div class="plus-minus-button">
         <span class="pm" onclick="btn(6)">+</span>
@@ -375,13 +387,13 @@
 
       <!-- Third row -->
       <div class="button" onclick="btn(10)">DRIVER</div>
-      <div class="button" onclick="btn(11)">FAIRWAY WOOD</div>
+      <div class="button" onclick="btn(11)">FAIRWAY<br />WOOD</div>
       <div class="button" onclick="btn(12)">UTILITY</div>
 
       <!-- Fourth row -->
       <div class="button" onclick="btn(13)">IRON</div>
       <div class="button" onclick="btn(14)">WEDGE</div>
-      <div class="button" onclick="btn(0)">TOTAL/CARRY</div>
+      <div class="button" onclick="btn(0)">TOTAL/<br />CARRY</div>
     </div>
 
   </div>

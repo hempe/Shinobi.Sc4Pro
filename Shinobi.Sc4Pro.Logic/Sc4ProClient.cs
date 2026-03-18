@@ -19,6 +19,7 @@ public sealed class Sc4ProClient : IAsyncDisposable
     private readonly IBleChannel _ble;
     private readonly ILogger? _logger;
     private readonly ConcurrentDictionary<byte, TaskCompletionSource<Sc4ProPacket>> _pending = new();
+    private volatile TaskCompletionSource<ShotPacket>? _pendingShotSeq;
 
     public Sc4ProClient(IBleChannel ble, ILogger? logger = null)
     {
@@ -26,8 +27,14 @@ public sealed class Sc4ProClient : IAsyncDisposable
         _logger = logger;
     }
 
-    /// <summary>Fired for every unsolicited packet (shots, remote-control button presses).</summary>
+    /// <summary>Fired for every unsolicited packet (remote-control button presses, unknowns).</summary>
     public event Func<Sc4ProPacket, Task>? PacketReceived;
+
+    /// <summary>
+    /// Fired when all 6 shot sub-packets have been pulled from the device.
+    /// Index 0 = seq 1 (ShotMetadata), index 1 = seq 2 (ShotBallSpeed), …, index 5 = seq 6 (ShotSpinDetails).
+    /// </summary>
+    public event Func<ShotPacket[], Task>? ShotReceived;
 
     // ── Connection ─────────────────────────────────────────────────────────────
 
@@ -133,9 +140,7 @@ public sealed class Sc4ProClient : IAsyncDisposable
         try
         {
             await _ble.SendAsync(packet);
-            var ack = (T)await tcs.Task.WaitAsync(timeout ?? TimeSpan.FromSeconds(5));
-            _logger?.LogDebug("BLE rx cmd=0x{Cmd:x2} {Raw}", cmd, ack.Raw);
-            return ack;
+            return (T)await tcs.Task.WaitAsync(timeout ?? TimeSpan.FromSeconds(5));
         }
         finally
         {
@@ -150,8 +155,21 @@ public sealed class Sc4ProClient : IAsyncDisposable
     private Task OnReceived(byte[] data)
     {
         var pkt = PacketParser.Parse(data);
+        _logger?.LogDebug("BLE rx cmd=0x{Cmd:x2} type={Type} {Hex}", pkt.Cmd, pkt.GetType().Name, Hex(data));
 
-        // Route to a waiting caller if we sent that cmd, otherwise raise the event
+        // Shot packets are handled via the pull handshake, not the normal ack path.
+        if (pkt is ShotPacket sp)
+        {
+            if (sp.Seq == 1)
+                _ = PullShotDataAsync(sp).ContinueWith(
+                    t => _logger?.LogError(t.Exception, "PullShotData failed"),
+                    TaskContinuationOptions.OnlyOnFaulted);
+            else
+                _pendingShotSeq?.TrySetResult(sp);
+            return Task.CompletedTask;
+        }
+
+        // Route to a waiting caller if we sent that cmd, otherwise raise the event.
         if (_pending.TryRemove(pkt.Cmd, out var tcs))
             tcs.TrySetResult(pkt);
         else
@@ -161,6 +179,43 @@ public sealed class Sc4ProClient : IAsyncDisposable
         }
 
         return Task.CompletedTask;
+    }
+
+    private async Task PullShotDataAsync(ShotPacket seq1)
+    {
+        var packets = new ShotPacket[6];
+        packets[0] = seq1;
+        var index = (ushort)seq1.Index;
+        _logger?.LogDebug("Shot {Index} pull start", index);
+
+        try
+        {
+            for (byte seq = 1; seq <= 6; seq++)
+            {
+                // Set up the listener for the next response before sending the ack,
+                // so we can't miss a fast reply.
+                TaskCompletionSource<ShotPacket>? nextTcs = null;
+                if (seq < 6)
+                {
+                    nextTcs = new TaskCompletionSource<ShotPacket>();
+                    _pendingShotSeq = nextTcs;
+                }
+
+                _logger?.LogDebug("Shot {Index} ack seq={Seq}", index, seq);
+                await _ble.SendAsync(PacketBuilder.ShotDataRequest(index, seq));
+
+                if (nextTcs != null)
+                    packets[seq] = await nextTcs.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            }
+        }
+        finally
+        {
+            _pendingShotSeq = null;
+        }
+
+        _logger?.LogDebug("Shot {Index} complete", index);
+        if (ShotReceived != null)
+            await ShotReceived(packets);
     }
 
     /// <summary>Disposes the underlying BLE channel.</summary>

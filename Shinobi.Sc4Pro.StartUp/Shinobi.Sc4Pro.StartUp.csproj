@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Shinobi.Sc4Pro.Logic/Shinobi.Sc4Pro.Logic.csproj" />
-    <ProjectReference Include="../Shinobi.Sc4Pro.Simulator/Shinobi.Sc4Pro.Simulator.csproj" />
+    <ProjectReference Include="../Shinobi.Sc4Pro.Linux/Shinobi.Sc4Pro.Linux.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Shinobi.WebSockets" Version="1.0.25" />

@@ -109,13 +109,19 @@ public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IA
     /// </summary>
     public int TargetDistance { get; private set; } = 0;
 
-    /// <summary>Fired for every unsolicited non-remote packet (shots, etc.).</summary>
+    /// <summary>Fired for every unsolicited non-remote packet.</summary>
     public event Func<Sc4ProPacket, Task>? PacketReceived;
 
     /// <summary>
     /// Fired for every hardware remote button press, after state has been updated.
     /// </summary>
     public event Func<RemoteControlPacket, Task>? RemoteButtonPressed;
+
+    /// <summary>
+    /// Fired when all 6 shot sub-packets have been pulled from the device.
+    /// Index 0 = seq 1 (ShotMetadata), …, index 5 = seq 6 (ShotSpinDetails).
+    /// </summary>
+    public event Func<ShotPacket[], Task>? ShotReceived;
 
     // ── Internals ─────────────────────────────────────────────────────────────
 
@@ -128,6 +134,14 @@ public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IA
     {
         _client = new Sc4ProClient(_ble, _logger);
         _client.PacketReceived += OnPacketReceived;
+        _client.ShotReceived += async pkts =>
+        {
+            if (ShotReceived != null)
+                await ShotReceived(pkts);
+            // Re-arm the device for the next shot automatically.
+            try { await _client.ShotReadyAsync(); }
+            catch (Exception ex) { _logger?.LogWarning(ex, "Auto ShotReady after shot failed"); }
+        };
 
         _logger?.LogDebug("Scanning for SC4Pro… ");
         DeviceName = await _client.ConnectAsync();
@@ -153,6 +167,16 @@ public sealed class Sc4ProDevice(IBleChannel _ble, ILogger? _logger = null) : IA
         CurrentClub = initialClub;
 
         await _client.SetEqAsync();
+
+        // Activate shot-data notifications then return to idle display —
+        // matches the real app's post-handshake sequence exactly.
+        var ds2Full = DS2Flags.Language | DS2Flags.Volume | DS2Flags.AppIndex | DS2Flags.AppIndexOnOff;
+        await _client.SetDeviceSetting2Async(ds2Full, volume: 3, appIndex: 2, appIndexOnOff: 1);
+        await _client.SetDeviceSetting2Async(ds2Full, volume: 3, appIndex: 1, appIndexOnOff: 1);
+        await _client.SetDeviceSetting1Async(DS1Flags.Club, club: initialClub);
+        await _client.ShotReadyAsync();
+        await _client.ShotReadyAsync();
+
         _logger?.LogDebug("done");
     }
 

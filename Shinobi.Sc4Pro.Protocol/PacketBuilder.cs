@@ -29,6 +29,24 @@ public static class PacketBuilder
     /// <summary>Builds a ShotReady packet that arms the device for the next shot.</summary>
     public static byte[] ShotReady() => Build(0x77, new byte[16]);
 
+    /// <summary>
+    /// Builds a shot data request packet (app→device ack for one shot sub-packet).
+    /// After the device notifies seq 1, the app sends this for seq 1..6 in turn
+    /// to pull each data sub-packet from the device.
+    /// </summary>
+    public static byte[] ShotDataRequest(ushort shotIndex, byte seq)
+    {
+        var pkt = new byte[20];
+        pkt[0] = 0x53;
+        pkt[1] = 0x73;
+        BitConverter.GetBytes(shotIndex).CopyTo(pkt, 2);
+        pkt[4] = seq;
+        // bytes 5..17 = zero payload
+        pkt[18] = 0x45;
+        pkt[19] = Checksum(pkt);
+        return pkt;
+    }
+
     /// <summary>Builds an EqSetting packet (all-zero content; sent as part of the connection handshake).</summary>
     public static byte[] EqSetting() => Build(0x76, new byte[16]);
 

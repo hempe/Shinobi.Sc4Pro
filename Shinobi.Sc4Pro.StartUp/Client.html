@@ -221,6 +221,10 @@
       color: #c4b5fd;
     }
 
+    .log-entry.shot {
+      color: #fde68a;
+    }
+
     .log-ts {
       color: #4b5563;
       margin-right: 6px;
@@ -331,6 +335,10 @@
           if (msg.command === 'setClub') setActiveClub(msg.club);
           if (msg.command === 'setMode') setActiveMode(msg.mode);
           logEntry('ack', JSON.stringify(msg, null, 2));
+          break;
+
+        case 'shot':
+          logEntry('shot', JSON.stringify(msg.packets, null, 2));
           break;
       }
     }

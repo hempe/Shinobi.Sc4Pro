@@ -17,7 +17,7 @@ var assembly = Assembly.GetExecutingAssembly();
 var clients = new ConcurrentDictionary<Guid, ShinobiWebSocket>();
 var loggerFactory = LoggerFactory.Create(builder => builder
                 .SetMinimumLevel(LogLevel.Debug)
-                .AddConsole());
+                .AddConsole(opts => opts.TimestampFormat = "HH:mm:ss.fff "));
 
 var logger = loggerFactory.CreateLogger("StartUp");
 
@@ -141,6 +141,23 @@ _ = Task.Run(async () =>
                 button = remote.ButtonName,
                 club = club?.ToString(),
             }, jsonOptions));
+            return Task.CompletedTask;
+        };
+
+        device.ShotReceived += packets =>
+        {
+            try
+            {
+                Broadcast(JsonSerializer.Serialize(new
+                {
+                    type = "shot",
+                    packets = packets.Select(p => new { p.Index, p.Seq, p.Raw }).ToArray(),
+                }, jsonOptions));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Shot broadcast failed");
+            }
             return Task.CompletedTask;
         };
 

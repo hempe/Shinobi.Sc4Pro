@@ -158,12 +158,20 @@ static class BtSnoopParser
                 obj["type"] = fromDevice ? "ShotReadyAck" : "ShotReady";
                 break;
 
-            case 0x73: // Shot sub-packet
-                obj["type"] = "Shot";
-                if (d.Length >= 10)
+            case 0x73: // Shot / SwingSpeedAck
+                if (d.Length == 20)
                 {
-                    obj["index"] = BitConverter.ToUInt32(d, 2);
-                    obj["seq"] = BitConverter.ToUInt32(d, 6);
+                    // 20-byte = shot timestamp (device confirms swing received)
+                    obj["type"] = "ShotTimestamp";
+                    if (d.Length >= 11)
+                        obj["deviceTime"] = $"{d[5] + 2000:0000}-{d[6]:00}-{d[7]:00} {d[8]:00}:{d[9]:00}:{d[10]:00}";
+                }
+                else
+                {
+                    obj["type"] = "ShotData";
+                    obj["payloadHex"] = d.Length >= 2
+                        ? BitConverter.ToString(d, 2, d.Length - 4).Replace("-", ":").ToLowerInvariant()
+                        : null;
                 }
                 break;
 
