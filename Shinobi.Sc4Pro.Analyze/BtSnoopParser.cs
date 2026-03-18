@@ -224,12 +224,12 @@ static class BtSnoopParser
                 obj["tailHex"]      = BitConverter.ToString(p, 8).Replace("-", ":").ToLowerInvariant();
                 break;
             case 6:
-                obj["backSpin"]     = (uint)BitConverter.ToUInt16(p, 0);
-                obj["sideSpin"]     = BitConverter.ToInt16(p, 2);
-                obj["spinAxis"]     = BitConverter.ToInt16(p, 4);
-                obj["attackAngle"]  = BitConverter.ToInt16(p, 6);
-                obj["clubPath"]     = BitConverter.ToInt16(p, 8);
-                obj["tailHex"]      = BitConverter.ToString(p, 10).Replace("-", ":").ToLowerInvariant();
+                obj["backSpin"]          = (uint)BitConverter.ToUInt16(p, 0);
+                obj["sideSpin"]          = BitConverter.ToInt16(p, 2);
+                obj["spinAxis_deg"]      = BitConverter.ToInt16(p, 4) / 100.0;
+                obj["attackAngle_deg"]   = BitConverter.ToInt16(p, 6) / 100.0;
+                obj["clubPath_deg"]      = BitConverter.ToInt16(p, 8) / 100.0;
+                obj["tailHex"]           = BitConverter.ToString(p, 10).Replace("-", ":").ToLowerInvariant();
                 break;
         }
     }
